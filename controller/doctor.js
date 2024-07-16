@@ -13,14 +13,14 @@ const all_appointments = async (req, res) => {
         if (!all_appointments) {
             return res
                 .status(401)
-                .json({ message: "no appointments found" });
+                .json({success:false, message: "no appointments found" });
         } else {
-            return res.json({ all_appointments });
+            return res.json({success:true, message: "appointments found successfully"});
         }
 
 
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ success: false,message: error.message });
     }
 }
 
@@ -35,11 +35,13 @@ const get_single_doctor = async (req, res) => {
         console.log(data)
         if (!data) {
             return res.status(401).json({
+                success:false,
                 message: "cannot find doctor"
 
             })
         }
         return res.status(202).json({
+            success:true,
             message: "find doctor successfully",
             data: data
 
@@ -66,10 +68,10 @@ const update_doctor = async (req, res) => {
     try {
         const data = await doctor.findById(id);
         if (!data) {
-            return res.status(401).json({ message: "cannot find doctor" });
+            return res.status(401).json({success:false, message: "cannot find doctor" });
         } else {
             const update = await doctor.findByIdAndUpdate(id, { name, image, contact, email, desc, ammount }, { new: true });
-            return res.status(202).json({ message: "update successfully", data: update });
+            return res.status(202).json({success:true, message: "update successfully", data: update });
         }
     } catch (e) {
         return res.status(400).json({ message: e.message });
@@ -107,15 +109,15 @@ const update_medicine = async (req, res) => {
         console.log(id, medicine, about)
         // console.log(id, medicine, about);
         if (!_id | !medicine | !about) {
-            return res.status(202).json({ message: "incomplete-content" });
+            return res.status(202).json({success:false, message: "incomplete-content" });
         } else {
             const appointment = await appointments.findOne({ _id });
             console.log(appointment)
             if (!appointment) {
-                return res.status(401).json({ message: "no appointment exist" });
+                return res.status(401).json({success:false, message: "no appointment exist" });
             } else {
                 await appointments.findByIdAndUpdate({ _id }, { medicine, about });
-                return res.status(200).json({ message: "appointment updated" });x   
+                return res.status(200).json({success:true, message: "appointment updated" });  
             }
 
         }

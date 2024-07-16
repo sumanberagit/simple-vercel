@@ -115,10 +115,10 @@ const all_appointments = async (req, res) => {
     if (!all_appointments || all_appointments.length === 0) {
       return res.status(401).json({ message: "no appointments found" });
     } else {
-      return res.json({ all_appointments });
+      return res.json({success:true, all_appointments });
     }
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({message: error.message });
   }
 };
 
@@ -131,12 +131,12 @@ const single_appointments = async (req, res) => {
       .populate("doctor")
       .populate("user");
     if (!appointment) {
-      return res.status(401).json({ message: "no appointments found" });
+      return res.status(401).json({success:false, message: "no appointments found" });
     } else {
-      return res.json({ appointment });
+      return res.json({success:true, appointment });
     }
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({message: error.message });
   }
 };
 

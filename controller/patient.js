@@ -11,7 +11,7 @@ const user_query = async (req, res) => {
   try {
     const { name, email, contact, message } = req.body;
     await pquery.create({ name, email, contact, message });
-    return res.status(200).json({ message: "Message Sent Successfully" ,data:req.body});
+    return res.status(200).json({success:true, message: "Message Sent Successfully" ,data:req.body});
 
 
   } catch (e) {
@@ -33,9 +33,9 @@ const single_appointments = async (req, res) => {
     if (!appointment) {
       return res
         .status(401)
-        .json({ message: "no appointments found" });
+        .json({success:false, message: "no appointments found" });
     } else {
-      return res.json({ appointment });
+      return res.json({success:true, appointment });
     }
 
 
@@ -56,9 +56,9 @@ const all_appointments = async (req, res) => {
         .find({ user: id })
         .populate("doctor");
       if (!user_appointments) {
-        return res.status(401).json({ message: "no appointments found" });
+        return res.status(401).json({success:false, message: "no appointments found" });
       } else {
-        return res.json({ user_appointments });
+        return res.json({success:false, user_appointments });
       }
     }
   } catch (error) {
@@ -69,10 +69,9 @@ const all_appointments = async (req, res) => {
 const create_appointments = async (req, res) => {
   try {
     const { doctor, disease, date, status } = req.body;
-
     const user = req.id;
 
-    if (!user | !doctor | !disease | !date) {
+    if (!user || !doctor || !disease || !date) {
       return res.status(202).json({ message: "incomplete content" });
     } else {
       const user_appointments = await appointments.create({
@@ -81,10 +80,15 @@ const create_appointments = async (req, res) => {
         disease,
         date,
       });
+
       if (user_appointments) {
-        return res.status(200).json({ message: "appointments created" , data:req.body});
+        return res.status(200).json({ 
+          success:true,
+          message: "appointment created successfully", 
+          appointment: user_appointments // Return the created appointment, including its ID
+        });
       } else {
-        return res.status(400).json({ message: "error creating appointments" });
+        return res.status(400).json({success:false, message: "error creating appointment" });
       }
     }
   } catch (error) {
@@ -120,12 +124,12 @@ const ambulance_booking = async (req, res) => {
   try {
 
     if (!name | !phoneNumber | !address | !emergencyType | !city | !state | !zip) {
-      return res.status(400).json({ message: "invalid request" })
+      return res.status(400).json({success:false, message: "invalid request" })
     }
 
 
     await ambulance.create({ name, phoneNumber, address, emergencyType, city, state, zip });
-    return res.status(200).json({ message: "ambulance book successfully" ,data:req.body});
+    return res.status(200).json({success:true, message: "ambulance book successfully" ,data:req.body});
 
 
 
@@ -148,12 +152,14 @@ const single_user = async (req, res) => {
     const data = await user.findById(id)
     if (!data) {
       return res.status(401).json({
+        success:false,
         message: "cannot find user"
 
       })
     }
 
     return res.status(202).json({
+      success:true,
       message: "find user successfully",
       data: data
 
@@ -195,6 +201,7 @@ const update_user = async (req, res) => {
 
     if (!data) {
       return res.status(401).json({
+        success:false,
         message: "cannot find user"
 
       })
@@ -208,6 +215,7 @@ const update_user = async (req, res) => {
 
 
       return res.status(202).json({
+        success:true,
         message: "update successfully",
         data: updateduser
       })
@@ -225,9 +233,9 @@ const get_appointments_for_doctor = async (req, res) => {
   try {
     const doctorAppointments = await appointments.find({ doctor: doctorId }).populate("user");
     if (!doctorAppointments.length) {
-      return res.status(401).json({ message: "no appointments found" });
+      return res.status(401).json({success:false, message: "no appointments found" });
     } else {
-      return res.json({ doctorAppointments });
+      return res.json({success:true, doctorAppointments });
     }
   } catch (error) {
     return res.status(500).json({ message: error.message });

@@ -11,7 +11,7 @@ const auth_middleware = async (req, res, next) => {
     console.log(verify)
 
     if (verify) {
-      req.id = verify.auth_user._id;
+      req.id = verify.auth_user;
       console.log(req.id)
       // req.is_admin = verify.auth_user.is_admin;
       next();

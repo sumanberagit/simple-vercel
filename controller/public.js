@@ -14,13 +14,13 @@ const get_doctor = async (req, res) => {
       console.log('Fetched doctors:', doctors);
 
       // Return the result in the response
-      return res.status(200).json({ doctors });
+      return res.status(200).json({success:true, doctors });
   } catch (e) {
       // Log the error
       console.error('Error fetching doctors:', e);
 
       // Return the error message in the response
-      return res.status(400).json({ message: e.message });
+      return res.status(400).json({message: e.message });
   }
 };
 
@@ -32,12 +32,14 @@ const get_single_doctor=async(req,res)=>{
       if(!data)
       {
         return res.status(401).json({
-          message:"cannot find doctor"
+          message:"cannot find doctor",
+          success:false
          
         })
       }
       return  res.status(202).json({
         message:"find doctor successfully",
+        success:true,
         data:data
 
       })
@@ -58,12 +60,12 @@ const all_services = async (req, res) => {
       
         const user_service = await service
           .find()
-          return res.status(200).json({user_service});
+          return res.status(200).json({success:true,user_service});
           
         
       }
     catch (error) {
-      return res.status(500).json({ message: error.message });
+      return res.status(500).json({message: error.message });
     }
   };
   

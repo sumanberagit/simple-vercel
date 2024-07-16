@@ -21,24 +21,24 @@ const signin = async (req, res) => {
   try {
     const { error } = signinSchema.validate(req.body);
     if (error) {
-      return res.status(400).json({ message: error.details[0].message });
+      return res.status(400).json({ success: false, message: error.details[0].message });
     }
     const { username, password } = req.body;
     const auth_user = await user.findOne({ username });
     if (!auth_user) {
-      return res.status(401).json({ message: `user with ${username} not found` });
+      return res.status(401).json({ success: false, message: `User with ${username} not found` });
     }
 
     if (!auth_user.verified) {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = "0000"; // Static OTP
       await OTP.create({ phone: auth_user.phone, otp, verified: false });
-      await sendOTP(auth_user.phone, otp);
-      return res.status(403).json({ message: "User not verified. OTP sent to phone number." });
+      await sendOTP(auth_user.phone, otp); // Send static OTP
+      return res.status(403).json({ success: false, message: "User not verified. OTP sent to phone number." });
     }
 
     const verify = await bcryptjs.compare(password, auth_user.password);
     if (!verify) {
-      return res.status(401).json({ message: "username or password incorrect" });
+      return res.status(401).json({ success: false, message: "Username or password incorrect" });
     }
 
     const token = jsonwebtoken.sign({ auth_user }, process.env.SECRET_KEY, {
@@ -46,31 +46,30 @@ const signin = async (req, res) => {
     });
     res.cookie("authorization", `Bearer ${token}`);
     return res.status(200).json({
+      success: true,
       token: `Bearer ${token}`,
       user: auth_user,
-      message: "login successfully",
-      // data: req.body,
+      message: "Login successfully",
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({message: error.message });
   }
 };
-
 
 const doctorsignin = async (req, res) => {
   try {
     const { error } = doctorSigninSchema.validate(req.body);
     if (error) {
-      return res.status(400).json({ message: error.details[0].message });
+      return res.status(400).json({ success: false, message: error.details[0].message });
     }
     const { email, password } = req.body;
     const auth_user = await doctor.findOne({ email });
     if (!auth_user) {
-      return res.status(401).json({ message: `user with ${email} not found` });
+      return res.status(401).json({ success: false, message: `User with ${email} not found` });
     }
     const verify = await bcryptjs.compare(password, auth_user.password);
     if (!verify) {
-      return res.status(401).json({ message: "email or password incorrect" });
+      return res.status(401).json({ success: false, message: "Email or password incorrect" });
     }
     const token = jsonwebtoken.sign({ auth_user }, process.env.SECRET_KEY, {
       expiresIn: "5h",
@@ -78,9 +77,9 @@ const doctorsignin = async (req, res) => {
     res.cookie("authorization", `Bearer ${token}`);
     return res
       .status(200)
-      .json({ token: `Bearer ${token}`, user: auth_user, data: req.body });
+      .json({ success: true, token: `Bearer ${token}`, user: auth_user, data: req.body });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -88,7 +87,7 @@ const signup = async (req, res) => {
   try {
     const { error } = signupSchema.validate(req.body);
     if (error) {
-      return res.status(400).json({ message: error.details[0].message });
+      return res.status(400).json({ success: false, message: error.details[0].message });
     }
     const { username, password, email, gender, age, location, phone } =
       req.body;
@@ -96,7 +95,7 @@ const signup = async (req, res) => {
     // Check if the user already exists
     const existingUser = await user.findOne({ username, email });
     if (existingUser) {
-      return res.status(409).json({ message: "User already exists" });
+      return res.status(409).json({ success: false, message: "User already exists" });
     }
 
     // Hash the password
@@ -116,16 +115,17 @@ const signup = async (req, res) => {
     });
 
     // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = "0000"; // Static OTP
     // Save OTP in OTP model
     await OTP.create({ phone, otp, verified: false });
 
     // Send OTP to the user's phone number
-    await sendOTP(phone, otp);
+    await sendOTP(phone, otp); // Send static OTP
 
     return res  
       .status(200)
       .json({
+        success: true,
         message: "User created and OTP sent to phone number",
         data: newUser,
       });
@@ -133,7 +133,7 @@ const signup = async (req, res) => {
     return res.status(500).json({ message: e.message });
   }
 };
-// Assuming you have an OTP model and twilio integration as discussed earlier
+
 const verifyOtp = async (req, res) => {
   try {
     const { phone, otp } = req.body;
@@ -142,7 +142,7 @@ const verifyOtp = async (req, res) => {
     if (!phone || !otp) {
       return res
         .status(400)
-        .json({ message: "Phone number and OTP are required" });
+        .json({ success: false, message: "Phone number and OTP are required" });
     }
 
     // Find the OTP in the database
@@ -150,23 +150,23 @@ const verifyOtp = async (req, res) => {
     if (!savedOTP) {
       return res
         .status(404)
-        .json({ message: "No OTP found for this phone number" });
+        .json({ success: false, message: "No OTP found for this phone number" });
     }
 
     // Compare OTPs
     console.log("Saved OTP:", savedOTP.otp);
     console.log("Received OTP:", otp);
 
-    if (savedOTP.otp !== otp) {
+    if (otp !== "0000") { // Check for static OTP
       console.log("Incorrect OTP");
-      return res.status(400).json({ message: "Incorrect OTP" });
+      return res.status(400).json({ success: false, message: "Incorrect OTP" });
     }
 
     // Check if the user exists before updating
     const auth_user = await user.findOne({ phone });
     if (!auth_user) {
       console.log("User not found");
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     console.log("User before update:", auth_user);
@@ -184,7 +184,7 @@ const verifyOtp = async (req, res) => {
       console.log("User not updated");
       return res
         .status(500)
-        .json({ message: "Failed to update user verification status" });
+        .json({ success: false, message: "Failed to update user verification status" });
     }
 
     // Optionally, you can delete the OTP record after verification
@@ -196,7 +196,7 @@ const verifyOtp = async (req, res) => {
 
     return res
       .status(200)
-      .json({ message: "OTP verified successfully", user: updatedUser });
+      .json({ success: true, message: "OTP verified successfully", user: updatedUser });
   } catch (error) {
     console.error("Error during OTP verification:", error);
     return res.status(500).json({ message: error.message });
@@ -207,7 +207,7 @@ const doctorsignup = async (req, res) => {
   try {
     const { error } = doctorSignupSchema.validate(req.body);
     if (error) {
-      return res.status(400).json({ message: error.details[0].message });
+      return res.status(400).json({ success: false, message: error.details[0].message });
     }
     const {
       name,
@@ -237,15 +237,14 @@ const doctorsignup = async (req, res) => {
       });
       return res
         .status(200)
-        .json({ message: "Doctor created", data: req.body });
+        .json({ success: true, message: "Doctor created", data: req.body });
     } else {
-      return res.status(409).json({ message: "Doctor already exist" });
+      return res.status(409).json({ success: false, message: "Doctor already exists" });
     }
   } catch (e) {
-    return res.status(500).json({ message: e.message });
+    return res.status(500).json({message: e.message });
   }
 };
-
 
 // Admin signin function
 const adminsignin = async (req, res) => {
@@ -259,18 +258,18 @@ const adminsignin = async (req, res) => {
       });
       res.cookie("authorization", `Bearer ${token}`);
       return res.status(200).json({
+        success: true,
         token: `Bearer ${token}`,
         message: "Admin login successfully",
         data:req.body
       });
     } else {
-      return res.status(401).json({ message: "Invalid email or password"});
+      return res.status(401).json({ success: false, message: "Invalid email or password"});
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({message: error.message });
   }
 };
-
 
 module.exports = {
   signin,
